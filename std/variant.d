@@ -1305,6 +1305,13 @@ unittest
     v[2] = 12;
     assert(v2 == v);
     assert(v2 != elements);
+    int[16] tmp = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+    v2 = tmp;
+    assert(v2 != v);
+    assert(v2 == tmp);
+    v = v2;
+    assert(v == v2);
+    assert(v != elements);
 }
 
 unittest
