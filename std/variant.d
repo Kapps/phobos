@@ -284,7 +284,17 @@ private:
                     if (src)
                     {
                         assert(target, "target must be non-null");
-                        *zat = *src;
+                        // Prevent overlapping array copy for large static
+                        // arrays by not copying if they're the same pointer.
+                        static if(isStaticArray!T)
+                        {
+                            if(zat != src)
+                                *zat = *src;
+                        }
+                        else
+                        {
+                            *zat = *src;
+                        }
                     }
                 }
                 else
@@ -1289,6 +1299,12 @@ unittest
     Variant v2 = v;
     assert(v2 == v);
     assert(v2 == elements);
+    v = v2;
+    // Since both variants are assigned to each other, adjusting one should
+    // adjust the other, but neither should adjust the original elements.
+    v[2] = 12;
+    assert(v2 == v);
+    assert(v2 != elements);
 }
 
 unittest
