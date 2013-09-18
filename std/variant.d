@@ -581,12 +581,7 @@ public:
                 }
                 else static if(isStaticArray!T)
                 {
-                    alias ElementType = typeof(T.init[0]);
-                    // Get a small performance boost by creating an
-                    // uninitialized array since we're copying the contents.
-                    import core.memory;
-                    auto p = cast(ElementType[])GC.malloc(rhs.sizeof)[0..rhs.sizeof];
-                    memcpy(p.ptr, rhs.ptr, rhs.sizeof);
+                    auto p = rhs.dup;
                 }
                 else
                 {
@@ -1292,7 +1287,7 @@ unittest
 unittest
 {
     // Test static arrays larger than Variant size.
-    int[16] elements = [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 ];
+    int[16] elements = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
     Variant v = elements;
     assert(v == elements);
     assert(v.type == typeid(elements));
