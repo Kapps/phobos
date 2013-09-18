@@ -235,12 +235,18 @@ private:
     // Handler for all of a type's operations
     static ptrdiff_t handler(A)(OpID selector, ubyte[size]* pStore, void* parm)
     {
+        static if(isArray!A) 
+        {
+            alias ElementType = typeof(A.init[0]);
+        }
         static A* getPtr(void* untyped)
         {
             if (untyped)
             {
                 static if (A.sizeof <= size)
                     return cast(A*) untyped;
+                else static if(isStaticArray!A)
+                    return cast(A*)(cast(ElementType[]*)untyped).ptr;
                 else
                     return *cast(A**) untyped;
             }
@@ -302,8 +308,18 @@ private:
 
             static if (target.size < A.sizeof)
             {
-                if (target.type.tsize < A.sizeof)
-                    *cast(A**)&target.store = new A;
+                if (target.type.tsize < A.sizeof) {
+                    static if(isStaticArray!A) 
+                    {
+                        auto elements = new ElementType[A.sizeof / ElementType.sizeof];
+                        auto rhs = cast(A*)elements.ptr;
+                    } 
+                    else 
+                    {
+                        auto rhs = new A;
+                    }
+                    *cast(A**)&target.store = rhs;
+                }
             }
             tryPutting(zis, typeid(A), cast(void*) getPtr(&target.store))
                 || assert(false);
@@ -551,6 +567,15 @@ public:
                 static if (__traits(compiles, {new T(rhs);}))
                 {
                     auto p = new T(rhs);
+                }
+                else static if(isStaticArray!T)
+                {
+                    alias ElementType = typeof(T.init[0]);
+                    // Get a small performance boost by creating an
+                    // uninitialized array since we're copying the contents.
+                    import core.memory;
+                    auto p = cast(ElementType[])GC.malloc(rhs.sizeof)[0..rhs.sizeof];
+                    memcpy(p.ptr, rhs.ptr, rhs.sizeof);
                 }
                 else
                 {
@@ -1250,6 +1275,20 @@ unittest
 
     alias Algebraic!(void, string) var_t;
     var_t foo = "quux";
+}
+
+// Issue #10879
+unittest
+{
+    // Test static arrays larger than Variant size.
+    int[16] elements = [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 ];
+    Variant v = elements;
+    assert(v == elements);
+    assert(v.type == typeid(elements));
+    assert(v.get!(int[16]) == elements);
+    Variant v2 = v;
+    assert(v2 == v);
+    assert(v2 == elements);
 }
 
 unittest
