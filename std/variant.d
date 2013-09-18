@@ -318,7 +318,8 @@ private:
 
             static if (target.size < A.sizeof)
             {
-                if (target.type.tsize < A.sizeof) {
+                if (target.type.tsize < A.sizeof) 
+                {
                     static if(isStaticArray!A) 
                     {
                         auto elements = new ElementType[A.sizeof / ElementType.sizeof];
