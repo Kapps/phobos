@@ -329,7 +329,7 @@ private:
                         return 0;
                     }
                     static if (is(typeof(*zis < *rhsPA)))
-                    {
+                    {                        
                         return *zis < *rhsPA ? -1 : 1;
                     }
                     else
@@ -1659,6 +1659,25 @@ unittest
     static int t2() { return 3; }
     Variant v2 = &t2;
     assert(v2() == 3);
+}
+
+// Types with const mis-match, issue 11364
+unittest 
+{
+    class Foo {
+        override int opCmp(Object o) { return 0; }
+        override bool opEquals(Object o) { return false; }
+    }
+
+    const(Foo) inst = new Foo();
+    Variant v = inst;
+    assert(v == inst);
+
+    const(TypeInfo) ti = typeid(TypeInfo);
+    Variant v2 = ti;
+    Variant v3 = ti;
+    assert(v2 == ti);
+    assert(v2 == v3);
 }
 
 /**
