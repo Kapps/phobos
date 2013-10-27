@@ -322,13 +322,13 @@ private:
             {
                 // cool! Same type!
                 auto rhsPA = getPtr(&rhsP.store);
-                static if (is(typeof(A.init == A.init)))
+                static if (is(typeof(*rhsPA == *zis)))
                 {
                     if (*rhsPA == *zis)
                     {
                         return 0;
                     }
-                    static if (is(typeof(A.init < A.init)))
+                    static if (is(typeof(*zis < *rhsPA)))
                     {
                         return *zis < *rhsPA ? -1 : 1;
                     }
@@ -366,13 +366,13 @@ private:
             {
                 // cool! Now temp has rhs in my type!
                 auto rhsPA = getPtr(&temp.store);
-                static if (is(typeof(A.init == A.init)))
+                static if (is(typeof(*rhsPA == *zis)))
                 {
                     if (*rhsPA == *zis)
                     {
                         return 0;
                     }
-                    static if (is(typeof(A.init < A.init)))
+                    static if (is(typeof(*zis < *rhsPA)))
                     {
                         return *zis < *rhsPA ? -1 : 1;
                     }
