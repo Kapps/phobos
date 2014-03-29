@@ -240,6 +240,9 @@ private:
     // Handler for all of a type's operations
     static ptrdiff_t handler(A)(OpID selector, ubyte[size]* pStore, void* parm)
     {
+        static if (isArray!A)
+            alias ElementType = typeof(A.init[0]);
+
         static A* getPtr(void* untyped)
         {
             if (untyped)
@@ -305,6 +308,16 @@ private:
                 alias AllTypes = ConstTypes;
             else //static if (isMutable!A)
                 alias AllTypes = TypeTuple!(MutaTypes, ConstTypes);
+
+            void assignPtr(DstType, SrcType)()
+            {
+                auto zat = cast(DstType*)target;
+                if (src)
+                {
+                    assert(target, "target must be non-null");
+                    *zat = *(cast(SrcType*)src);
+                }
+            }
                 
             foreach (T ; AllTypes)
             {
@@ -315,21 +328,11 @@ private:
 
                 static if (is(typeof(*cast(T*) target = *src)))
                 {
-                    auto zat = cast(T*) target;
-                    if (src)
-                    {
-                        assert(target, "target must be non-null");
-                        *zat = *src;
-                    }
+                    assignPtr!(T, typeof(*src))();
                 }
                 else static if (is(T V == const(U), U) || is(T V == immutable(U), U))
                 {
-                    auto zat = cast(U*) target;
-                    if (src)
-                    {
-                        assert(target, "target must be non-null");
-                        *zat = *(cast(UA*) (src));
-                    }
+                    assignPtr!(U, UA)();
                 }
                 else
                 {
@@ -429,7 +432,7 @@ private:
                 enforce(0, "Not implemented");
             }
             // Can't handle void arrays as there isn't any result to return.
-            static if (isDynamicArray!(A) && !is(Unqual!(typeof(A.init[0])) == void) && allowed!(typeof(A.init[0])))
+            static if (isDynamicArray!(A) && !is(Unqual!ElementType == void) && allowed!ElementType)
             {
                 // array type; input and output are the same VariantN
                 auto result = cast(VariantN*) parm;
